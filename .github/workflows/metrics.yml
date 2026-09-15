@@ -1,0 +1,42 @@
+name: Track Lead Time
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  track-lead-time:
+    if: github.event.pull_request.merged == true
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - self-hosted
+
+    steps:
+      - name: Calculate Lead Time
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from datetime import datetime
+
+          with open(os.environ["GITHUB_EVENT_PATH"], "r", encoding="utf-8") as f:
+              event = json.load(f)
+
+          created_at = event["pull_request"]["created_at"]
+          merged_at = event["pull_request"]["merged_at"]
+
+          def parse_iso8601(value: str) -> datetime:
+              return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+          first_commit_time = parse_iso8601(created_at)
+          merge_time = parse_iso8601(merged_at)
+          lead_time = int((merge_time - first_commit_time).total_seconds())
+
+          print(f"Lead Time: {lead_time} seconds")
+          PY
