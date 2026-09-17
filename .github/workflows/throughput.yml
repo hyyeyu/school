@@ -1,0 +1,34 @@
+name: Weekly Throughput
+
+on:
+  schedule:
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+permissions:
+  issues: read
+
+jobs:
+  calculate-throughput:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get closed issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          since=$(date -u -d '7 days ago' '+%Y-%m-%d')
+          closed_issues=$(gh issue list \
+            --repo "$GITHUB_REPOSITORY" \
+            --state closed \
+            --search "closed:>=$since" \
+            --limit 1000 \
+            --json number \
+            --jq 'length')
+
+          {
+            echo "## Weekly Throughput"
+            echo
+            echo "Closed issues in the last 7 days: **$closed_issues**"
+            echo
+            echo "Period started: $since (UTC)"
+          } >> "$GITHUB_STEP_SUMMARY"

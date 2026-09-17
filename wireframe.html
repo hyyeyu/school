@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>크리에이터 레이트 계산기 와이어프레임</title>
+  <style>
+    :root {
+      --ink: #111111;
+      --paper: #f7f7f4;
+      --line: #b8b8b2;
+      --muted: #6b6b66;
+      --fill: #e8e8e2;
+      --accent: #d9ff45;
+      --danger: #ffb5b5;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Trebuchet MS", "Malgun Gothic", sans-serif;
+      line-height: 1.5;
+    }
+
+    .shell { width: min(100% - 32px, 1080px); margin: 0 auto; }
+    header {
+      border-bottom: 2px solid var(--ink);
+      background: var(--paper);
+    }
+    .topbar {
+      min-height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand { font-weight: 900; letter-spacing: -0.04em; }
+    .brand span { display: block; color: var(--muted); font-size: 11px; letter-spacing: 0.08em; }
+    button, select, input {
+      font: inherit;
+      color: inherit;
+    }
+    button {
+      border: 2px solid var(--ink);
+      background: var(--paper);
+      padding: 11px 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    button:hover, button:focus-visible { background: var(--accent); outline: 3px solid var(--ink); outline-offset: 2px; }
+    .ghost { border-color: var(--line); color: var(--muted); }
+    main { padding: 38px 0 72px; }
+    .eyebrow { color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+    h1, h2, p { margin-top: 0; }
+    h1 { max-width: 720px; margin-bottom: 18px; font-size: clamp(38px, 8vw, 76px); line-height: .98; letter-spacing: -0.07em; }
+    h2 { font-size: 28px; line-height: 1.1; letter-spacing: -0.04em; }
+    .intro { max-width: 580px; color: var(--muted); font-size: 18px; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .start-grid { display: grid; gap: 28px; grid-template-columns: minmax(0, 1.3fr) minmax(240px, .7fr); align-items: end; }
+    .note, .panel, .result-card { border: 2px solid var(--ink); background: #fff; box-shadow: 7px 7px 0 var(--ink); }
+    .note { padding: 22px; }
+    .note strong { display: block; margin-bottom: 12px; font-size: 20px; }
+    .note ul { padding-left: 20px; margin: 0; color: var(--muted); }
+    .stepper { display: flex; gap: 6px; margin-bottom: 38px; }
+    .step { flex: 1; border-top: 5px solid var(--line); padding-top: 9px; color: var(--muted); font-size: 12px; font-weight: 800; }
+    .step.active { border-color: var(--ink); color: var(--ink); }
+    .panel { max-width: 720px; padding: clamp(22px, 5vw, 42px); box-shadow: 9px 9px 0 var(--ink); }
+    .fields { display: grid; gap: 20px; }
+    .field label { display: block; margin-bottom: 7px; font-weight: 800; }
+    input, select { width: 100%; min-height: 48px; border: 2px solid var(--ink); border-radius: 0; padding: 9px 12px; background: #fff; }
+    .hint { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .choice-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .choice { position: relative; }
+    .choice input { position: absolute; opacity: 0; }
+    .choice label { display: block; min-height: 48px; border: 2px solid var(--ink); padding: 11px; cursor: pointer; background: #fff; }
+    .choice input:checked + label { background: var(--accent); }
+    .form-actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 30px; }
+    .primary { background: var(--accent); }
+    .error { display: none; margin-top: 6px; color: #8b0000; font-size: 13px; font-weight: 800; }
+    .error.visible { display: block; }
+    .warning { margin-top: 20px; padding: 12px; border: 2px solid var(--ink); background: var(--danger); font-size: 13px; font-weight: 800; }
+    .result-layout { display: grid; gap: 24px; grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr); align-items: start; }
+    .result-card { padding: 28px; }
+    .price { margin: 12px 0 22px; font-size: clamp(32px, 6vw, 58px); line-height: 1; font-weight: 900; letter-spacing: -0.06em; }
+    .meta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; margin: 24px 0; border: 1px solid var(--ink); background: var(--ink); }
+    .meta div { padding: 14px; background: #fff; }
+    .meta small { display: block; color: var(--muted); font-size: 11px; font-weight: 800; }
+    .meta strong { display: block; margin-top: 4px; }
+    details { border-top: 2px solid var(--ink); padding: 16px 0; }
+    summary { cursor: pointer; font-weight: 900; }
+    .calculation { display: grid; gap: 8px; margin-top: 16px; color: var(--muted); font-size: 14px; }
+    .calculation div { display: flex; justify-content: space-between; gap: 16px; }
+    .calculation strong { color: var(--ink); }
+    .disclaimer { margin-top: 24px; color: var(--muted); font-size: 12px; }
+    .toast { position: fixed; right: 20px; bottom: 20px; display: none; border: 2px solid var(--ink); background: var(--accent); padding: 14px 18px; font-weight: 800; box-shadow: 5px 5px 0 var(--ink); }
+    .toast.visible { display: block; }
+    @media (max-width: 700px) {
+      .shell { width: min(100% - 24px, 560px); }
+      .topbar { min-height: 62px; }
+      main { padding-top: 28px; }
+      .start-grid, .result-layout { grid-template-columns: 1fr; }
+      .note, .panel, .result-card { box-shadow: 5px 5px 0 var(--ink); }
+      .form-actions { flex-direction: column-reverse; }
+      .form-actions button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="shell topbar">
+      <div class="brand">CREATOR RATE<span>WIREFRAME / MVP</span></div>
+      <button class="ghost" id="resetTop" type="button">처음부터</button>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="screen active" data-screen="0">
+      <div class="start-grid">
+        <div>
+          <p class="eyebrow">01 / start</p>
+          <h1>내 광고단가는 얼마가 적당할까요?</h1>
+          <p class="intro">팔로워 수뿐 아니라 조회수, 참여율, 콘텐츠 조건을 반영해 권장 광고 견적 범위를 계산합니다.</p>
+          <button class="primary" data-next type="button">내 광고단가 계산하기 →</button>
+        </div>
+        <aside class="note">
+          <strong>3분이면 계산 완료</strong>
+          <ul><li>로그인 없이 이용</li><li>계산 근거 공개</li><li>결과 복사 및 인쇄</li></ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="1">
+      <div class="stepper"><div class="step active">01 기본 정보</div><div class="step">02 영향력 지표</div><div class="step">03 광고 조건</div></div>
+      <div class="panel">
+        <p class="eyebrow">01 / profile</p><h2>기본 정보를 입력해 주세요.</h2>
+        <div class="fields">
+          <div class="field"><label for="platform">활동 플랫폼 *</label><select id="platform"><option>Instagram</option><option>YouTube</option><option>TikTok</option><option>Blog</option></select></div>
+          <div class="field"><label>광고 콘텐츠 형식 *</label><div class="choice-grid"><div class="choice"><input checked id="feed" name="format" type="radio"><label for="feed">피드 게시물</label></div><div class="choice"><input id="shorts" name="format" type="radio"><label for="shorts">릴스 / 숏폼</label></div><div class="choice"><input id="story" name="format" type="radio"><label for="story">스토리</label></div><div class="choice"><input id="longform" name="format" type="radio"><label for="longform">롱폼 영상</label></div></div></div>
+          <div class="field"><label for="followers">팔로워 수 *</label><input id="followers" inputmode="numeric" placeholder="예: 15000" type="number" min="1"><span class="hint">숫자만 입력해 주세요.</span><span class="error" id="followersError">팔로워 수를 입력해 주세요.</span></div>
+        </div>
+        <div class="form-actions"><button class="ghost" data-prev type="button">← 이전</button><button class="primary" data-next type="button">다음: 지표 입력 →</button></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="2">
+      <div class="stepper"><div class="step">01 기본 정보</div><div class="step active">02 영향력 지표</div><div class="step">03 광고 조건</div></div>
+      <div class="panel">
+        <p class="eyebrow">02 / influence</p><h2>최근 콘텐츠 성과를 입력해 주세요.</h2>
+        <div class="fields">
+          <div class="field"><label for="views">최근 콘텐츠 평균 조회수</label><input id="views" inputmode="numeric" placeholder="예: 25000" type="number" min="0"><span class="hint">모르면 비워둘 수 있습니다.</span></div>
+          <div class="field"><label for="likes">평균 좋아요 수</label><input id="likes" inputmode="numeric" placeholder="예: 1200" type="number" min="0"></div>
+          <div class="field"><label for="comments">평균 댓글 수</label><input id="comments" inputmode="numeric" placeholder="예: 80" type="number" min="0"></div>
+        </div>
+        <div class="warning">지표를 모르면 팔로워 수 기반으로 추정합니다. 결과 신뢰도는 낮음으로 표시됩니다.</div>
+        <div class="form-actions"><button class="ghost" data-prev type="button">← 이전</button><button class="primary" data-next type="button">다음: 광고 조건 →</button></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="3">
+      <div class="stepper"><div class="step">01 기본 정보</div><div class="step">02 영향력 지표</div><div class="step active">03 광고 조건</div></div>
+      <div class="panel">
+        <p class="eyebrow">03 / campaign</p><h2>광고 조건을 선택해 주세요.</h2>
+        <div class="fields">
+          <div class="field"><label for="category">광고 카테고리 *</label><select id="category"><option>뷰티</option><option>패션</option><option>식품</option><option>여행</option><option>IT / 테크</option><option>라이프스타일</option></select></div>
+          <div class="field"><label for="difficulty">제작 난이도</label><select id="difficulty"><option>보통</option><option>낮음</option><option>높음</option></select></div>
+          <div class="field"><label for="usage">2차 활용권</label><select id="usage"><option>없음</option><option>1개월</option><option>3개월</option><option>6개월</option><option>영구</option></select></div>
+          <div class="field"><label for="exclusive">경쟁사 독점 기간</label><select id="exclusive"><option>없음</option><option>1개월</option><option>3개월</option><option>6개월</option></select></div>
+        </div>
+        <div class="form-actions"><button class="ghost" data-prev type="button">← 이전</button><button class="primary" data-result type="button">단가 계산하기 →</button></div>
+      </div>
+    </section>
+
+    <section class="screen" data-screen="4">
+      <div class="result-layout">
+        <div>
+          <p class="eyebrow">04 / estimate</p><h2>권장 광고단가</h2>
+          <div class="result-card"><div class="price">₩ 800,000<br><small>~ ₩ 1,200,000</small></div><p><strong>기본 제안가 ₩ 1,000,000</strong></p><div class="meta"><div><small>영향력 등급</small><strong>Established</strong></div><div><small>신뢰도</small><strong>보통</strong></div><div><small>예상 도달 규모</small><strong>25,000명</strong></div><div><small>콘텐츠 형식</small><strong>릴스 / 숏폼</strong></div></div><details><summary>계산 근거 보기</summary><div class="calculation"><div><span>기본 노출가</span><strong>₩ 650,000</strong></div><div><span>참여도 계수</span><strong>× 1.15</strong></div><div><span>콘텐츠 형식 계수</span><strong>× 1.20</strong></div><div><span>카테고리 계수</span><strong>× 1.05</strong></div><div><span>제작 추가비</span><strong>+ ₩ 100,000</strong></div></div></details><p class="disclaimer">참고용 권장 견적이며 실제 단가는 캠페인 목표와 협상 조건에 따라 달라질 수 있습니다.</p></div>
+        </div>
+        <div class="panel"><p class="eyebrow">selected conditions</p><h2>적용 조건</h2><p>Instagram · 릴스 / 숏폼 · 뷰티</p><p>2차 활용 1개월 · 독점 없음</p><hr><button id="editResult" type="button">조건 수정</button><button id="copyResult" class="primary" type="button">결과 복사</button><button id="printResult" type="button">인쇄 / PDF 저장</button></div>
+      </div>
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status">✓ 결과가 클립보드에 복사되었습니다</div>
+  <script>
+    const screens = [...document.querySelectorAll('.screen')];
+    let current = 0;
+    const show = index => { current = index; screens.forEach((screen, i) => screen.classList.toggle('active', i === index)); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    document.querySelectorAll('[data-next]').forEach(button => button.addEventListener('click', () => {
+      if (current === 1 && !document.querySelector('#followers').value) { document.querySelector('#followersError').classList.add('visible'); document.querySelector('#followers').focus(); return; }
+      document.querySelector('#followersError')?.classList.remove('visible'); show(current + 1);
+    }));
+    document.querySelectorAll('[data-prev]').forEach(button => button.addEventListener('click', () => show(current - 1)));
+    document.querySelector('[data-result]').addEventListener('click', () => show(4));
+    document.querySelector('#editResult').addEventListener('click', () => show(3));
+    document.querySelectorAll('#resetTop').forEach(button => button.addEventListener('click', () => show(0)));
+    document.querySelector('#printResult').addEventListener('click', () => window.print());
+    document.querySelector('#copyResult').addEventListener('click', async () => { try { await navigator.clipboard.writeText('권장 광고단가: ₩800,000 ~ ₩1,200,000\n기본 제안가: ₩1,000,000'); } catch (error) {} const toast = document.querySelector('#toast'); toast.classList.add('visible'); setTimeout(() => toast.classList.remove('visible'), 2400); });
+  </script>
+</body>
+</html>
