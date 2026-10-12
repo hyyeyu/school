@@ -18,6 +18,8 @@ jobs:
 
     steps:
       - name: Calculate Lead Time
+        env:
+          METRICS_RUNNER_OS: ${{ runner.os }}
         shell: bash
         run: |
           python3 - <<'PY'
@@ -38,5 +40,27 @@ jobs:
           merge_time = parse_iso8601(merged_at)
           lead_time = int((merge_time - first_commit_time).total_seconds())
 
+          result = {
+              "schemaVersion": 1,
+              "metric": "pull-request-lead-time",
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "pullRequestNumber": event["pull_request"]["number"],
+              "runnerOs": os.environ["METRICS_RUNNER_OS"],
+              "createdAt": created_at,
+              "mergedAt": merged_at,
+              "leadTimeSeconds": lead_time,
+          }
+          with open("lead-time.json", "w", encoding="utf-8") as f:
+              json.dump(result, f, ensure_ascii=False, indent=2)
+              f.write("\n")
+
           print(f"Lead Time: {lead_time} seconds")
           PY
+
+      - name: Upload lead-time data
+        uses: actions/upload-artifact@v4
+        with:
+          name: lead-time-${{ github.event.pull_request.number }}-${{ matrix.os }}
+          path: lead-time.json
+          if-no-files-found: error
+          retention-days: 90

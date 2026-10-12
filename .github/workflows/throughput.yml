@@ -11,24 +11,87 @@ permissions:
 jobs:
   calculate-throughput:
     runs-on: ubuntu-latest
+    permissions:
+      issues: read
     steps:
-      - name: Get closed issues
+      - name: Collect closed issues
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           since=$(date -u -d '7 days ago' '+%Y-%m-%d')
-          closed_issues=$(gh issue list \
+          until=$(date -u '+%Y-%m-%d')
+          closed_issue_numbers=$(gh issue list \
             --repo "$GITHUB_REPOSITORY" \
             --state closed \
             --search "closed:>=$since" \
             --limit 1000 \
             --json number \
-            --jq 'length')
+            --jq '[.[].number]')
+          closed_issues_count=$(jq 'length' <<< "$closed_issue_numbers")
+          generated_at=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+
+          jq -n \
+            --arg repository "$GITHUB_REPOSITORY" \
+            --arg generatedAt "$generated_at" \
+            --arg periodStart "$since" \
+            --arg periodEnd "$until" \
+            --argjson closedIssuesCount "$closed_issues_count" \
+            --argjson closedIssueNumbers "$closed_issue_numbers" \
+            '{
+              schemaVersion: 1,
+              metric: "weekly-throughput",
+              repository: $repository,
+              generatedAt: $generatedAt,
+              period: {
+                start: $periodStart,
+                end: $periodEnd,
+                timezone: "UTC"
+              },
+              closedIssuesCount: $closedIssuesCount,
+              closedIssueNumbers: $closedIssueNumbers
+            }' > weekly-throughput.json
+
+      - name: Upload throughput data
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-throughput-data
+          path: weekly-throughput.json
+          if-no-files-found: error
+          retention-days: 90
+
+  generate-weekly-report:
+    needs: calculate-throughput
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download throughput data
+        uses: actions/download-artifact@v4
+        with:
+          name: weekly-throughput-data
+
+      - name: Generate weekly report
+        run: |
+          repository=$(jq -r '.repository' weekly-throughput.json)
+          generated_at=$(jq -r '.generatedAt' weekly-throughput.json)
+          period_start=$(jq -r '.period.start' weekly-throughput.json)
+          period_end=$(jq -r '.period.end' weekly-throughput.json)
+          closed_issues_count=$(jq -r '.closedIssuesCount' weekly-throughput.json)
 
           {
-            echo "## Weekly Throughput"
+            echo "# 주간 저장소 리포트"
             echo
-            echo "Closed issues in the last 7 days: **$closed_issues**"
+            echo "- 저장소: \`$repository\`"
+            echo "- 생성 시각: $generated_at (UTC)"
+            echo "- 집계 기간: $period_start ~ $period_end (UTC)"
             echo
-            echo "Period started: $since (UTC)"
-          } >> "$GITHUB_STEP_SUMMARY"
+            echo "## 처리량"
+            echo
+            echo "- 최근 7일간 종료된 이슈: **${closed_issues_count}건**"
+          } | tee weekly-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload weekly report
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-throughput-report
+          path: weekly-report.md
+          if-no-files-found: error
+          retention-days: 90
