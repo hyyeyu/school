@@ -1,0 +1,41 @@
+name: Bug report
+description: Report a bug in StudyMate
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "오류를 재현할 수 있도록 구체적으로 작성해 주세요."
+  - type: textarea
+    id: summary
+    attributes:
+      label: 오류 요약
+      description: 어떤 문제가 발생했나요?
+      placeholder: 기대한 동작과 실제 동작을 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 재현 방법
+      description: 오류가 발생하는 단계를 순서대로 작성해 주세요.
+      placeholder: |
+        1. 페이지로 이동
+        2. 버튼 클릭
+        3. 오류 확인
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 동작
+      description: 정상적으로는 어떻게 동작해야 하나요?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 환경 및 로그
+      description: 브라우저, OS, 오류 메시지 등
+    validations:
+      required: false
