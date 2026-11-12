@@ -21,7 +21,7 @@
 - 와이어프레임/시뮬레이션: [wireframe.html](wireframe.html)
 - 발표 자료: [creator-rate-presentation.md](creator-rate-presentation.md), [presentation.html](presentation.html)
 
-현재 저장소에는 패키지 매니저, 서버 실행 환경, 앱 CI가 구성되어 있지 않으며, 이 README는 제품 개요와 문서 구조를 설명하는 용도로 작성되었습니다.
+현재 저장소는 정적 HTML 프로토타입과 이를 검증·배포하는 Python 기반 GitHub Actions CI를 사용합니다. 별도의 애플리케이션 서버나 패키지 매니저는 필요하지 않습니다.
 
 ## MVP 기능 요약
 
@@ -67,6 +67,31 @@ python -m http.server 8000
 - [기여 가이드](CONTRIBUTING.md): 이슈 작성, 개발 확인, 커밋 및 Pull Request 절차
 - [행동 강령](CODE_OF_CONDUCT.md): 커뮤니티에서 지켜야 할 상호 존중 원칙
 - [MIT 라이선스](LICENSE): 사용, 수정 및 배포 조건
+
+## CI/CD (GitHub Actions)
+
+[.github/workflows/ci.yml](.github/workflows/ci.yml)은 다음 파이프라인을 자동 실행합니다.
+
+1. **Build**: Python 표준 라이브러리로 `wireframe.html`을 `dist/index.html`로 패키징하고 아티팩트를 업로드합니다.
+2. **Test**: Build 아티팩트를 다운로드한 뒤 Ruff 정적 검사와 Python `unittest` 스모크 테스트를 실행합니다.
+3. **Deploy**: `main` 브랜치에 Push된 변경이 Build와 모든 Matrix 테스트를 통과하면 GitHub Pages로 배포합니다.
+
+테스트 Matrix는 Ubuntu, Windows, macOS와 Python 3.11, 3.12, 3.13 조합(총 9개 환경)입니다.
+
+### 로컬 CI 실행
+
+```bash
+python scripts/build.py
+python -m pip install ruff
+ruff check scripts tests
+python -m unittest discover -s tests -v
+```
+
+### GitHub Pages 및 Secrets 설정
+
+- 저장소 **Settings → Pages → Build and deployment → Source**를 **GitHub Actions**로 설정해야 배포할 수 있습니다.
+- 외부 배포 모니터 알림을 사용할 경우 **Settings → Secrets and variables → Actions → New repository secret**에서 `DEPLOYMENT_WEBHOOK_URL`을 등록합니다. 이 값은 배포 후 알림 단계에만 환경 변수로 전달되며 로그에 출력하지 않습니다. 등록하지 않아도 GitHub Pages 배포는 진행됩니다.
+- 현재 프로토타입에는 외부 API 키가 필요하지 않으므로 불필요한 비밀정보를 추가하지 않습니다.
 
 ## 주의 사항
 
