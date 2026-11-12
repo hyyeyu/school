@@ -1,8 +1,8 @@
 """Smoke tests for the static website artifact."""
 
+import unittest
 from html.parser import HTMLParser
 from pathlib import Path
-import unittest
 
 SITE = Path(__file__).resolve().parents[1] / "dist" / "index.html"
 
