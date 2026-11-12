@@ -50,18 +50,23 @@
 
 ## 로컬 실행
 
-이 저장소는 정적 HTML 중심 구조라 별도 설치 과정이 필요하지 않습니다. 브라우저에서 다음 파일을 직접 열면 프로토타입을 확인할 수 있습니다.
+이 저장소는 정적 HTML 중심 구조라 별도 설치 과정이 필요하지 않습니다. 브라우저에서 [wireframe.html](wireframe.html)을 직접 열면 프로토타입을 확인할 수 있습니다.
 
-- [wireframe.html](wireframe.html)
-
-필요한 경우 로컬 웹 서버를 통해 실행할 수도 있습니다.
+필요한 경우 저장소 폴더에서 다음 명령으로 로컬 웹 서버를 실행할 수 있습니다.
 
 ```bash
-cd "c:\Users\user\OneDrive\바탕 화면\school"
 python -m http.server 8000
 ```
 
 그다음 브라우저에서 `http://localhost:8000/wireframe.html`로 접속하면 됩니다.
+
+## 오픈소스 참여 안내
+
+프로젝트에 참여하기 전에 아래 문서를 확인해 주세요.
+
+- [기여 가이드](CONTRIBUTING.md): 이슈 작성, 개발 확인, 커밋 및 Pull Request 절차
+- [행동 강령](CODE_OF_CONDUCT.md): 커뮤니티에서 지켜야 할 상호 존중 원칙
+- [MIT 라이선스](LICENSE): 사용, 수정 및 배포 조건
 
 ## 주의 사항
 
