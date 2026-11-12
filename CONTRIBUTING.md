@@ -36,8 +36,11 @@ git checkout -b docs/short-description
 
 ## 개발 및 검증
 
-현재 저장소는 제품 기획 문서와 정적 HTML 프로토타입 중심이며, 패키지 설치나 자동화된 테스트 명령은 구성되어 있지 않습니다.
+현재 저장소는 제품 기획 문서와 정적 HTML 프로토타입 중심입니다. Python 표준 라이브러리 기반 빌드·스모크 테스트와 Ruff 린트가 GitHub Actions에서 실행됩니다.
 
+- `python scripts/build.py`로 정적 사이트 산출물을 생성합니다.
+- `python -m pip install ruff` 후 `ruff check scripts tests`로 Python 코드를 검사합니다.
+- `python -m unittest discover -s tests -v`로 스모크 테스트를 실행합니다.
 - `wireframe.html`을 브라우저에서 열어 화면을 확인합니다.
 - 화면을 수정했다면 데스크톱과 모바일 너비에서 레이아웃을 확인합니다.
 - 입력값의 경계 조건과 비정상 값에 대한 동작을 확인합니다.
