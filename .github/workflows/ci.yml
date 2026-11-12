@@ -87,6 +87,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      DEPLOYMENT_WEBHOOK_URL: ${{ secrets.DEPLOYMENT_WEBHOOK_URL }}
     steps:
       - name: Deploy site
         id: deployment
@@ -97,7 +99,6 @@ jobs:
       - name: Notify external deployment monitor (optional)
         if: env.DEPLOYMENT_WEBHOOK_URL != ''
         env:
-          DEPLOYMENT_WEBHOOK_URL: ${{ secrets.DEPLOYMENT_WEBHOOK_URL }}
           DEPLOYMENT_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
           curl --fail --silent --show-error --output /dev/null \
