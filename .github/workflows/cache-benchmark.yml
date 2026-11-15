@@ -1,0 +1,118 @@
+name: Cache Performance Benchmark
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cold:
+    name: Cold pip install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Measure install without cache
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          import time
+
+          started = time.perf_counter()
+          subprocess.run(
+              ["python", "-m", "pip", "install", "--disable-pip-version-check", "--no-cache-dir", "ruff"],
+              check=True,
+          )
+          elapsed = round(time.perf_counter() - started, 3)
+          with open("cold.json", "w", encoding="utf-8") as output:
+              json.dump({"mode": "cold", "seconds": elapsed}, output)
+          print(f"Cold install: {elapsed:.3f}s")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cold-measurement
+          path: cold.json
+
+  warm:
+    name: Warm pip cache install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Prime pip cache before timing
+        run: |
+          python -m pip install --disable-pip-version-check ruff
+          python -m pip uninstall --yes ruff
+      - name: Measure cached install
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import subprocess
+          import time
+
+          started = time.perf_counter()
+          subprocess.run(
+              ["python", "-m", "pip", "install", "--disable-pip-version-check", "ruff"],
+              check=True,
+          )
+          elapsed = round(time.perf_counter() - started, 3)
+          with open("warm.json", "w", encoding="utf-8") as output:
+              json.dump({"mode": "warm", "seconds": elapsed}, output)
+          print(f"Warm install: {elapsed:.3f}s")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: warm-measurement
+          path: warm.json
+
+  report:
+    name: Generate comparison report
+    needs: [cold, warm]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*-measurement"
+          path: measurements
+          merge-multiple: false
+      - name: Calculate improvement
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          cold = json.loads(Path("measurements/cold-measurement/cold.json").read_text())
+          warm = json.loads(Path("measurements/warm-measurement/warm.json").read_text())
+          before = cold["seconds"]
+          after = warm["seconds"]
+          improvement = ((before - after) / before * 100) if before else 0
+          report = [
+              "# Cache performance comparison",
+              "",
+              "| Measurement | Time |",
+              "|---|---:|",
+              f"| Before (cold install) | {before:.3f} s |",
+              f"| After (warm pip cache) | {after:.3f} s |",
+              f"| Improvement | {improvement:.2f}% |",
+              "",
+              "Measured on separate Ubuntu GitHub-hosted jobs with Python 3.12.",
+              "This compares Ruff installation time only, not total CI duration.",
+          ]
+          Path("cache-performance-report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
+          print("\n".join(report))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cache-performance-report
+          path: cache-performance-report.md
+          retention-days: 90
