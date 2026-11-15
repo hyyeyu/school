@@ -1,0 +1,34 @@
+name: Reusable Python checks
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint and test (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Configure cached Python environment
+        uses: ./.github/actions/python-quality
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build test site
+        run: python scripts/build.py
+
+      - name: Run Ruff
+        run: ruff check scripts tests
+
+      - name: Run unit and smoke tests
+        run: python -m unittest discover -s tests -v
