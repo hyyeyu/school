@@ -1,7 +1,7 @@
 """Build the static prototype into a deployable directory."""
 
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "wireframe.html"
